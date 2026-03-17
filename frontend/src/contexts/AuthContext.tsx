@@ -9,6 +9,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string, displayName: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   loading: boolean;
   error: string | null;
 }
@@ -21,6 +22,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const refreshUser = async () => {
+    const activeToken = token || localStorage.getItem('token');
+    const storedUser = user || JSON.parse(localStorage.getItem('user') || 'null');
+
+    if (!activeToken || !storedUser?.id) {
+      return;
+    }
+
+    const { user: updatedUser } = await usersApi.getProfile(storedUser.id, activeToken);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  };
+
   useEffect(() => {
     // Check for existing token in localStorage
     const storedToken = localStorage.getItem('token');
@@ -31,7 +45,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
       
-      // Fetch fresh user data to get updated follower count
       const fetchUserData = async () => {
         try {
           const { user: updatedUser } = await usersApi.getProfile(parsedUser.id, storedToken);
@@ -105,6 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     register,
     logout,
+    refreshUser,
     loading,
     error,
   };

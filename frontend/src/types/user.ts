@@ -1,3 +1,5 @@
+import { LearnerProfile } from '../domain/learnerProfile';
+
 export interface User {
   id: string;
   username: string;
@@ -9,4 +11,5 @@ export interface User {
   updatedAt?: string;
   followersCount?: number;
   followingCount?: number;
+  learnerProfile?: LearnerProfile;
 }

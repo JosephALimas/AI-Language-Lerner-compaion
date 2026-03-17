@@ -1,11 +1,8 @@
 import { DashboardOverview } from '../domain/learning';
 import { defaultLanguagePair } from '../domain/languages';
+import { LearnerProfile } from '../domain/learnerProfile';
 
-const overview: DashboardOverview = {
-  learnerPair: {
-    sourceLanguage: defaultLanguagePair.source,
-    targetLanguage: defaultLanguagePair.target,
-  },
+const baseOverview: Omit<DashboardOverview, 'learnerPair'> = {
   modules: [
     {
       key: 'translator',
@@ -117,7 +114,13 @@ const overview: DashboardOverview = {
 };
 
 export const learningContentService = {
-  async getDashboardOverview(): Promise<DashboardOverview> {
-    return overview;
+  async getDashboardOverview(learnerProfile?: LearnerProfile): Promise<DashboardOverview> {
+    return {
+      ...baseOverview,
+      learnerPair: {
+        sourceLanguage: learnerProfile?.nativeLanguage || defaultLanguagePair.source,
+        targetLanguage: learnerProfile?.learningLanguage || defaultLanguagePair.target,
+      },
+    };
   },
 };

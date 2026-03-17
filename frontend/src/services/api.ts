@@ -1,5 +1,6 @@
 import { User } from '../types/user';
 import { Post } from '../types/post';
+import { LearnerProfile } from '../domain/learnerProfile';
 
 // Use environment variable for API URL
 const API_URL = import.meta.env.VITE_API_URL;
@@ -96,6 +97,34 @@ export const usersApi = {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+    });
+    return handleResponse(response);
+  },
+};
+
+export const learnerProfileApi = {
+  getLearnerProfile: async (token: string): Promise<{ learnerProfile: LearnerProfile }> => {
+    console.log(`Making getLearnerProfile request to: ${API_URL}/learner-profile`);
+    const response = await fetch(`${API_URL}/learner-profile`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+
+  saveLearnerProfile: async (
+    learnerProfile: Omit<LearnerProfile, 'userId'>,
+    token: string,
+  ): Promise<{ learnerProfile: LearnerProfile }> => {
+    console.log(`Making saveLearnerProfile request to: ${API_URL}/learner-profile`);
+    const response = await fetch(`${API_URL}/learner-profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(learnerProfile),
     });
     return handleResponse(response);
   },

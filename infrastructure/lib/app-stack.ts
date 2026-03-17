@@ -228,6 +228,25 @@ export class AppStack extends cdk.Stack {
       }
     });
 
+    // Lambda functions for learner profile
+    const getLearnerProfileFunction = new lambda.Function(this, 'GetLearnerProfileFunction', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: 'getLearnerProfile.handler',
+      code: lambda.Code.fromAsset(getLambdaPackagePath('getLearnerProfile')),
+      environment: {
+        USERS_TABLE: this.usersTable.tableName
+      }
+    });
+
+    const upsertLearnerProfileFunction = new lambda.Function(this, 'UpsertLearnerProfileFunction', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: 'upsertLearnerProfile.handler',
+      code: lambda.Code.fromAsset(getLambdaPackagePath('upsertLearnerProfile')),
+      environment: {
+        USERS_TABLE: this.usersTable.tableName
+      }
+    });
+
     // Lambda function for following a user
     const followUserFunction = new lambda.Function(this, 'FollowUserFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
@@ -304,6 +323,8 @@ export class AppStack extends cdk.Stack {
     this.usersTable.grantReadData(loginFunction);
     this.usersTable.grantReadData(getProfileFunction);
     this.usersTable.grantReadWriteData(updateProfileFunction);
+    this.usersTable.grantReadData(getLearnerProfileFunction);
+    this.usersTable.grantReadWriteData(upsertLearnerProfileFunction);
     this.usersTable.grantReadWriteData(followUserFunction);
     this.usersTable.grantReadWriteData(unfollowUserFunction);
     this.usersTable.grantReadData(getPostsFunction);  // Add read permission for Users table
@@ -330,6 +351,10 @@ export class AppStack extends cdk.Stack {
     const userId = users.addResource('{userId}');
     userId.addMethod('GET', new apigateway.LambdaIntegration(getProfileFunction));
     userId.addMethod('PUT', new apigateway.LambdaIntegration(updateProfileFunction));
+
+    const learnerProfile = this.api.root.addResource('learner-profile');
+    learnerProfile.addMethod('GET', new apigateway.LambdaIntegration(getLearnerProfileFunction));
+    learnerProfile.addMethod('PUT', new apigateway.LambdaIntegration(upsertLearnerProfileFunction));
 
     // Follow/unfollow endpoints
     const follow = userId.addResource('follow');

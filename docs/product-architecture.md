@@ -124,6 +124,14 @@
 - grammar starter guides tied to real situations
 - persistent-ready contracts, even if some content is static in the first pass
 
+## Current implemented slice
+
+- The first persisted language-product flow is now learner profile management.
+- Learner preferences live behind authenticated endpoints:
+  - `GET /learner-profile`
+  - `PUT /learner-profile`
+- The frontend dashboard and profile screen now use persisted learner preferences instead of only static language-pair assumptions.
+
 ### Out for initial MVP
 - live streaming bi-directional voice
 - advanced spaced repetition

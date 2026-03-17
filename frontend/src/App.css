@@ -261,6 +261,20 @@ body {
   margin: 0 auto;
 }
 
+.profile-preferences-grid,
+.posts-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.profile-preferences-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.profile-posts h3 {
+  margin-top: 2rem;
+}
+
 .form-group {
   margin-bottom: 1rem;
 }
@@ -273,7 +287,8 @@ body {
 }
 
 .form-group input,
-.form-group textarea {
+.form-group textarea,
+.form-group select {
   width: 100%;
   padding: 0.75rem;
   border: 1px solid var(--color-border);
@@ -408,7 +423,8 @@ button:disabled {
 
   .hero-panel,
   .module-grid,
-  .content-grid {
+  .content-grid,
+  .profile-preferences-grid {
     grid-template-columns: 1fr;
   }
 }

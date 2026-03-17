@@ -1,23 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardOverview } from '../domain/learning';
+import { defaultLearnerProfile, learningGoalOptions, proficiencyLevelOptions } from '../domain/learnerProfile';
 import { supportedLanguages } from '../domain/languages';
 import { learningContentService } from '../services/learningContent';
+import { learnerProfileApi } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const getLanguageLabel = (code: string) =>
   supportedLanguages.find((language) => language.code === code)?.nativeName ?? code;
 
 const Dashboard: React.FC = () => {
+  const { token } = useAuth();
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [profileSummary, setProfileSummary] = useState(defaultLearnerProfile());
 
   useEffect(() => {
     let active = true;
 
     const loadOverview = async () => {
       try {
-        const data = await learningContentService.getDashboardOverview();
+        const learnerProfile = token
+          ? (await learnerProfileApi.getLearnerProfile(token)).learnerProfile
+          : defaultLearnerProfile();
+        const data = await learningContentService.getDashboardOverview(learnerProfile);
         if (active) {
+          setProfileSummary(learnerProfile);
           setOverview(data);
         }
       } catch {
@@ -36,7 +45,7 @@ const Dashboard: React.FC = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [token]);
 
   if (loading) {
     return <div className="loading">Loading your learning workspace...</div>;
@@ -47,6 +56,12 @@ const Dashboard: React.FC = () => {
   }
 
   const pairLabel = `${getLanguageLabel(overview.learnerPair.sourceLanguage)} to ${getLanguageLabel(overview.learnerPair.targetLanguage)}`;
+  const proficiencyLabel =
+    proficiencyLevelOptions.find((option) => option.value === profileSummary.proficiencyLevel)?.label ??
+    profileSummary.proficiencyLevel;
+  const goalLabel =
+    learningGoalOptions.find((option) => option.value === profileSummary.learningGoal)?.label ??
+    profileSummary.learningGoal;
 
   return (
     <div className="dashboard">
@@ -66,6 +81,14 @@ const Dashboard: React.FC = () => {
           <div className="stat-card">
             <span className="stat-label">Platform direction</span>
             <strong>Web-first, modular, AI-ready</strong>
+          </div>
+          <div className="stat-card">
+            <span className="stat-label">Current level</span>
+            <strong>{proficiencyLabel}</strong>
+          </div>
+          <div className="stat-card">
+            <span className="stat-label">Primary goal</span>
+            <strong>{goalLabel}</strong>
           </div>
         </div>
       </section>
