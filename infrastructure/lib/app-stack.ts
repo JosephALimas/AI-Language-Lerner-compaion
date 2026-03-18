@@ -8,6 +8,8 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
+import * as cr from 'aws-cdk-lib/custom-resources';
+import { phraseCardSeeds } from './phrase-card-seeds';
 
 declare const require: any;
 declare const __dirname: string;
@@ -23,6 +25,7 @@ export class AppStack extends cdk.Stack {
   public readonly likesTable: dynamodb.Table;
   public readonly commentsTable: dynamodb.Table;
   public readonly followsTable: dynamodb.Table;
+  public readonly phraseCardsTable: dynamodb.Table;
   public readonly api: apigateway.RestApi;
   public readonly websiteBucket: s3.Bucket;
   public readonly distribution: cloudfront.Distribution;
@@ -30,10 +33,7 @@ export class AppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // Helper function to get Lambda package path
-    const getLambdaPackagePath = (functionName: string) => {
-      return path.join(__dirname, '../../backend/dist/lambda-packages', `${functionName}.zip`);
-    };
+    const lambdaAssetPath = path.join(__dirname, '../../backend/dist');
 
     // Cognito User Pool
     this.userPool = new cognito.UserPool(this, 'UserPool', {
@@ -172,6 +172,20 @@ export class AppStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL
     });
 
+    // DynamoDB Phrase Cards Table
+    this.phraseCardsTable = new dynamodb.Table(this, 'PhraseCardsTable', {
+      partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY
+    });
+
+    this.phraseCardsTable.addGlobalSecondaryIndex({
+      indexName: 'languagePair-index',
+      partitionKey: { name: 'languagePair', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'categoryLevelSort', type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL
+    });
+
     // API Gateway
     this.api = new apigateway.RestApi(this, 'MicroBloggingApi', {
       restApiName: 'Micro Blogging API',
@@ -187,8 +201,8 @@ export class AppStack extends cdk.Stack {
     // Lambda function for registration
     const registerFunction = new lambda.Function(this, 'RegisterFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'register.handler',
-      code: lambda.Code.fromAsset(getLambdaPackagePath('register')),
+      handler: 'functions/auth/register.handler',
+      code: lambda.Code.fromAsset(lambdaAssetPath),
       environment: {
         USER_POOL_ID: this.userPool.userPoolId,
         USER_POOL_CLIENT_ID: this.userPoolClient.userPoolClientId,
@@ -199,8 +213,8 @@ export class AppStack extends cdk.Stack {
     // Lambda function for login
     const loginFunction = new lambda.Function(this, 'LoginFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'login.handler',
-      code: lambda.Code.fromAsset(getLambdaPackagePath('login')),
+      handler: 'functions/auth/login.handler',
+      code: lambda.Code.fromAsset(lambdaAssetPath),
       environment: {
         USER_POOL_ID: this.userPool.userPoolId,
         USER_POOL_CLIENT_ID: this.userPoolClient.userPoolClientId,
@@ -211,8 +225,8 @@ export class AppStack extends cdk.Stack {
     // Lambda function for getting user profile
     const getProfileFunction = new lambda.Function(this, 'GetProfileFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'getProfile.handler',
-      code: lambda.Code.fromAsset(getLambdaPackagePath('getProfile')),
+      handler: 'functions/users/getProfile.handler',
+      code: lambda.Code.fromAsset(lambdaAssetPath),
       environment: {
         USERS_TABLE: this.usersTable.tableName
       }
@@ -221,8 +235,8 @@ export class AppStack extends cdk.Stack {
     // Lambda function for updating user profile
     const updateProfileFunction = new lambda.Function(this, 'UpdateProfileFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'updateProfile.handler',
-      code: lambda.Code.fromAsset(getLambdaPackagePath('updateProfile')),
+      handler: 'functions/users/updateProfile.handler',
+      code: lambda.Code.fromAsset(lambdaAssetPath),
       environment: {
         USERS_TABLE: this.usersTable.tableName
       }
@@ -231,8 +245,8 @@ export class AppStack extends cdk.Stack {
     // Lambda functions for learner profile
     const getLearnerProfileFunction = new lambda.Function(this, 'GetLearnerProfileFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'getLearnerProfile.handler',
-      code: lambda.Code.fromAsset(getLambdaPackagePath('getLearnerProfile')),
+      handler: 'functions/users/getLearnerProfile.handler',
+      code: lambda.Code.fromAsset(lambdaAssetPath),
       environment: {
         USERS_TABLE: this.usersTable.tableName
       }
@@ -240,18 +254,37 @@ export class AppStack extends cdk.Stack {
 
     const upsertLearnerProfileFunction = new lambda.Function(this, 'UpsertLearnerProfileFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'upsertLearnerProfile.handler',
-      code: lambda.Code.fromAsset(getLambdaPackagePath('upsertLearnerProfile')),
+      handler: 'functions/users/upsertLearnerProfile.handler',
+      code: lambda.Code.fromAsset(lambdaAssetPath),
       environment: {
         USERS_TABLE: this.usersTable.tableName
+      }
+    });
+
+    const getPhraseCardsFunction = new lambda.Function(this, 'GetPhraseCardsFunction', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: 'functions/phraseCards/getPhraseCards.handler',
+      code: lambda.Code.fromAsset(lambdaAssetPath),
+      environment: {
+        USERS_TABLE: this.usersTable.tableName,
+        PHRASE_CARDS_TABLE: this.phraseCardsTable.tableName
+      }
+    });
+
+    const getPhraseCardByIdFunction = new lambda.Function(this, 'GetPhraseCardByIdFunction', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: 'functions/phraseCards/getPhraseCardById.handler',
+      code: lambda.Code.fromAsset(lambdaAssetPath),
+      environment: {
+        PHRASE_CARDS_TABLE: this.phraseCardsTable.tableName
       }
     });
 
     // Lambda function for following a user
     const followUserFunction = new lambda.Function(this, 'FollowUserFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'followUser.handler',
-      code: lambda.Code.fromAsset(getLambdaPackagePath('followUser')),
+      handler: 'functions/users/followUser.handler',
+      code: lambda.Code.fromAsset(lambdaAssetPath),
       environment: {
         USERS_TABLE: this.usersTable.tableName,
         FOLLOWS_TABLE: this.followsTable.tableName
@@ -261,8 +294,8 @@ export class AppStack extends cdk.Stack {
     // Lambda function for unfollowing a user
     const unfollowUserFunction = new lambda.Function(this, 'UnfollowUserFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'unfollowUser.handler',
-      code: lambda.Code.fromAsset(getLambdaPackagePath('unfollowUser')),
+      handler: 'functions/users/unfollowUser.handler',
+      code: lambda.Code.fromAsset(lambdaAssetPath),
       environment: {
         USERS_TABLE: this.usersTable.tableName,
         FOLLOWS_TABLE: this.followsTable.tableName
@@ -272,8 +305,8 @@ export class AppStack extends cdk.Stack {
     // Lambda function for checking if following a user
     const checkFollowingFunction = new lambda.Function(this, 'CheckFollowingFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'checkFollowing.handler',
-      code: lambda.Code.fromAsset(getLambdaPackagePath('checkFollowing')),
+      handler: 'functions/users/checkFollowing.handler',
+      code: lambda.Code.fromAsset(lambdaAssetPath),
       environment: {
         FOLLOWS_TABLE: this.followsTable.tableName,
         USERS_TABLE: this.usersTable.tableName
@@ -283,8 +316,8 @@ export class AppStack extends cdk.Stack {
     // Lambda function for creating posts
     const createPostFunction = new lambda.Function(this, 'CreatePostFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'createPost.handler',
-      code: lambda.Code.fromAsset(getLambdaPackagePath('createPost')),
+      handler: 'functions/posts/createPost.handler',
+      code: lambda.Code.fromAsset(lambdaAssetPath),
       environment: {
         POSTS_TABLE: this.postsTable.tableName,
         USERS_TABLE: this.usersTable.tableName
@@ -294,8 +327,8 @@ export class AppStack extends cdk.Stack {
     // Lambda function for getting posts
     const getPostsFunction = new lambda.Function(this, 'GetPostsFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'getPosts.handler',
-      code: lambda.Code.fromAsset(getLambdaPackagePath('getPosts')),
+      handler: 'functions/posts/getPosts.handler',
+      code: lambda.Code.fromAsset(lambdaAssetPath),
       environment: {
         POSTS_TABLE: this.postsTable.tableName,
         USERS_TABLE: this.usersTable.tableName
@@ -305,8 +338,8 @@ export class AppStack extends cdk.Stack {
     // Lambda function for liking posts
     const likePostFunction = new lambda.Function(this, 'LikePostFunction', {
       runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'likePost.handler',
-      code: lambda.Code.fromAsset(getLambdaPackagePath('likePost')),
+      handler: 'functions/posts/likePost.handler',
+      code: lambda.Code.fromAsset(lambdaAssetPath),
       environment: {
         POSTS_TABLE: this.postsTable.tableName,
         LIKES_TABLE: this.likesTable.tableName,
@@ -331,6 +364,7 @@ export class AppStack extends cdk.Stack {
     this.usersTable.grantReadData(createPostFunction);  // Add read permission for Users table
     this.usersTable.grantReadData(likePostFunction);  // Add read permission for Users table
     this.usersTable.grantReadData(checkFollowingFunction);  // Add read permission for Users table
+    this.usersTable.grantReadData(getPhraseCardsFunction);
     this.followsTable.grantReadWriteData(followUserFunction);
     this.followsTable.grantReadWriteData(unfollowUserFunction);
     this.followsTable.grantReadData(checkFollowingFunction);
@@ -338,6 +372,8 @@ export class AppStack extends cdk.Stack {
     this.postsTable.grantReadData(getPostsFunction);
     this.postsTable.grantReadWriteData(likePostFunction);
     this.likesTable.grantReadWriteData(likePostFunction);
+    this.phraseCardsTable.grantReadData(getPhraseCardsFunction);
+    this.phraseCardsTable.grantReadData(getPhraseCardByIdFunction);
 
     // API Gateway endpoints
     const auth = this.api.root.addResource('auth');
@@ -355,6 +391,11 @@ export class AppStack extends cdk.Stack {
     const learnerProfile = this.api.root.addResource('learner-profile');
     learnerProfile.addMethod('GET', new apigateway.LambdaIntegration(getLearnerProfileFunction));
     learnerProfile.addMethod('PUT', new apigateway.LambdaIntegration(upsertLearnerProfileFunction));
+
+    const phraseCards = this.api.root.addResource('phrase-cards');
+    phraseCards.addMethod('GET', new apigateway.LambdaIntegration(getPhraseCardsFunction));
+    const phraseCardId = phraseCards.addResource('{id}');
+    phraseCardId.addMethod('GET', new apigateway.LambdaIntegration(getPhraseCardByIdFunction));
 
     // Follow/unfollow endpoints
     const follow = userId.addResource('follow');
@@ -426,6 +467,54 @@ export class AppStack extends cdk.Stack {
     this.likesTable.grantReadWriteData(authenticatedRole);
     this.commentsTable.grantReadWriteData(authenticatedRole);
     this.followsTable.grantReadWriteData(authenticatedRole);
+    this.phraseCardsTable.grantReadData(authenticatedRole);
+
+    phraseCardSeeds.forEach((card) => {
+      const item: Record<string, { S?: string; BOOL?: boolean }> = {
+        id: { S: card.id },
+        sourceLanguage: { S: card.sourceLanguage },
+        targetLanguage: { S: card.targetLanguage },
+        category: { S: card.category },
+        phraseText: { S: card.phraseText },
+        translatedText: { S: card.translatedText },
+        level: { S: card.level },
+        isSystemProvided: { BOOL: card.isSystemProvided },
+        languagePair: { S: `${card.sourceLanguage}#${card.targetLanguage}` },
+        categoryLevelSort: { S: `${card.category}#${card.level}#${card.phraseText.toLowerCase()}` },
+      };
+
+      if (card.pronunciationGuide) {
+        item.pronunciationGuide = { S: card.pronunciationGuide };
+      }
+
+      if (card.usageNotes) {
+        item.usageNotes = { S: card.usageNotes };
+      }
+
+      new cr.AwsCustomResource(this, `PhraseCardSeed${card.id.replace(/[^A-Za-z0-9]/g, '')}`, {
+        onCreate: {
+          service: 'DynamoDB',
+          action: 'putItem',
+          parameters: {
+            TableName: this.phraseCardsTable.tableName,
+            Item: item
+          },
+          physicalResourceId: cr.PhysicalResourceId.of(card.id)
+        },
+        onUpdate: {
+          service: 'DynamoDB',
+          action: 'putItem',
+          parameters: {
+            TableName: this.phraseCardsTable.tableName,
+            Item: item
+          },
+          physicalResourceId: cr.PhysicalResourceId.of(card.id)
+        },
+        policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
+          resources: [this.phraseCardsTable.tableArn]
+        })
+      });
+    });
 
     // Output the configuration values for frontend .env file
     // Order matches the .env file: VITE_API_URL, VITE_USER_POOL_ID, VITE_USER_POOL_CLIENT_ID, VITE_IDENTITY_POOL_ID

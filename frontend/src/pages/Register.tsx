@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { appRuntimeMode } from '../config/runtime';
 
 const Register: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -50,6 +51,12 @@ const Register: React.FC = () => {
         {(formError || error) && (
           <div className="error-message">
             {formError || error}
+          </div>
+        )}
+
+        {appRuntimeMode !== 'aws' && (
+          <div className="info-message">
+            Registration stays local in dev mode and does not create AWS Cognito users.
           </div>
         )}
         

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { appRuntimeMode } from '../config/runtime';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -35,6 +36,12 @@ const Login: React.FC = () => {
         {(formError || error) && (
           <div className="error-message">
             {formError || error}
+          </div>
+        )}
+
+        {appRuntimeMode !== 'aws' && (
+          <div className="info-message">
+            Local dev mode is active. Use demo / password123, or create a new local account.
           </div>
         )}
         

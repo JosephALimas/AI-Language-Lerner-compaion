@@ -1,4 +1,7 @@
 node_modules
 frontend/.env
+frontend/dist
 backend/dist
 infrastructure/dist
+infrastructure/cdk.out/
+dev/local-api/data/runtime/

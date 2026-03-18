@@ -1,27 +1,33 @@
 #!/bin/bash
 
-# Master script to deploy the backend
-# This script prepares the Lambda packages and deploys the CDK stack
-
 set -e
 
 echo "Starting backend deployment..."
 
-# Make sure the scripts are executable
-chmod +x ./scripts/prepare-lambda-packages.sh
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+BACKEND_DIR="$( cd "${SCRIPT_DIR}/.." && pwd )"
+INFRASTRUCTURE_DIR="$( cd "${BACKEND_DIR}/../infrastructure" && pwd )"
 
-# Prepare Lambda packages
-echo "Preparing Lambda packages..."
-./scripts/prepare-lambda-packages.sh
+cd "${BACKEND_DIR}"
 
-# Update the CDK stack to use the prepared packages
-echo "Updating CDK stack..."
-cd ../infrastructure
+echo "Installing backend dependencies..."
+npm install
 
-# Build the CDK project
+echo "Building backend runtime artifacts..."
 npm run build
 
-# Deploy the CDK stack
+chmod +x ./scripts/prepare-lambda-packages.sh
+echo "Preparing backend Lambda runtime assets..."
+./scripts/prepare-lambda-packages.sh
+
+cd "${INFRASTRUCTURE_DIR}"
+
+echo "Installing infrastructure dependencies..."
+npm install
+
+echo "Building infrastructure..."
+npm run build
+
 echo "Deploying CDK stack..."
 cdk deploy --require-approval never
 

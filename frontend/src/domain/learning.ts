@@ -1,4 +1,5 @@
 import { LanguageCode } from './languages';
+import { PhraseCard } from './phraseCard';
 
 export type LearningModuleKey = 'translator' | 'phrasebook' | 'lessons' | 'grammar';
 
@@ -21,15 +22,6 @@ export interface TranslatorSessionSummary {
   situation: string;
   pair: LearnerLanguagePair;
   turns: TranslatorTurn[];
-}
-
-export interface PhraseCard {
-  id: string;
-  category: string;
-  situation: string;
-  sourceText: string;
-  targetText: string;
-  pronunciationHint?: string;
 }
 
 export interface LessonSummary {

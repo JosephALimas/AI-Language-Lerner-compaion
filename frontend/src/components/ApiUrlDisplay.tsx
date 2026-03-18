@@ -1,9 +1,7 @@
 import React from 'react';
+import { appRuntimeMode, runtimeDescription } from '../config/runtime';
 
 const ApiUrlDisplay: React.FC = () => {
-  // Use environment variable for API URL
-  const apiUrl = import.meta.env.VITE_API_URL;
-  
   return (
     <div style={{
       position: 'fixed',
@@ -18,7 +16,7 @@ const ApiUrlDisplay: React.FC = () => {
       textAlign: 'center',
       zIndex: 1000
     }}>
-      API URL: {apiUrl}
+      Runtime mode: {appRuntimeMode} | {runtimeDescription}
     </div>
   );
 };

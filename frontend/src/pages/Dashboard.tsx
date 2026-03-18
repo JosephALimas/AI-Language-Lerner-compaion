@@ -3,7 +3,7 @@ import { DashboardOverview } from '../domain/learning';
 import { defaultLearnerProfile, learningGoalOptions, proficiencyLevelOptions } from '../domain/learnerProfile';
 import { supportedLanguages } from '../domain/languages';
 import { learningContentService } from '../services/learningContent';
-import { learnerProfileApi } from '../services/api';
+import { learnerProfileApi, phraseCardsApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 const getLanguageLabel = (code: string) =>
@@ -24,7 +24,16 @@ const Dashboard: React.FC = () => {
         const learnerProfile = token
           ? (await learnerProfileApi.getLearnerProfile(token)).learnerProfile
           : defaultLearnerProfile();
-        const data = await learningContentService.getDashboardOverview(learnerProfile);
+        const phraseCardsResponse = token
+          ? await phraseCardsApi.getPhraseCards(token, {
+              sourceLanguage: learnerProfile.nativeLanguage,
+              targetLanguage: learnerProfile.learningLanguage,
+            })
+          : { phraseCards: [], filters: { sourceLanguage: 'es', targetLanguage: 'de', category: null, level: null } };
+        const data = await learningContentService.getDashboardOverview(
+          learnerProfile,
+          phraseCardsResponse.phraseCards.slice(0, 4),
+        );
         if (active) {
           setProfileSummary(learnerProfile);
           setOverview(data);
@@ -131,9 +140,10 @@ const Dashboard: React.FC = () => {
           <div className="stack-list">
             {overview.phraseCards.map((card) => (
               <div key={card.id} className="stack-card">
-                <span className="stack-meta">{card.category} | {card.situation}</span>
-                <p>{card.sourceText}</p>
-                <strong>{card.targetText}</strong>
+                <span className="stack-meta">{card.category} | {card.level}</span>
+                <p>{card.phraseText}</p>
+                <strong>{card.translatedText}</strong>
+                {card.pronunciationGuide && <small>{card.pronunciationGuide}</small>}
               </div>
             ))}
           </div>

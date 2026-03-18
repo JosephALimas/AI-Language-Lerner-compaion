@@ -131,6 +131,11 @@
   - `GET /learner-profile`
   - `PUT /learner-profile`
 - The frontend dashboard and profile screen now use persisted learner preferences instead of only static language-pair assumptions.
+- Phrase cards are now the next persisted product slice.
+- Phrase content lives behind authenticated endpoints:
+  - `GET /phrase-cards`
+  - `GET /phrase-cards/{id}`
+- The dashboard and phrase-card screen now use real backend phrase data aligned to learner language preferences.
 
 ### Out for initial MVP
 - live streaming bi-directional voice

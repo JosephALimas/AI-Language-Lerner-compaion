@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
+import PhraseCardsPage from './pages/PhraseCards';
 import ApiUrlDisplay from './components/ApiUrlDisplay';
 import './App.css';
 
@@ -36,6 +37,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         <nav>
           <ul>
             <li><Link to="/">Dashboard</Link></li>
+            <li><Link to="/phrase-cards">Phrase cards</Link></li>
             <li><Link to={`/profile/${user?.id}`}>Profile</Link></li>
           </ul>
         </nav>
@@ -68,6 +70,16 @@ function App() {
                   </Layout>
                 </ProtectedRoute>
               } 
+            />
+            <Route 
+              path="/phrase-cards"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PhraseCardsPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
             />
             <Route 
               path="/profile/:userId" 

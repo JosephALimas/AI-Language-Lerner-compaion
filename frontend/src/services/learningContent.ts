@@ -1,6 +1,7 @@
 import { DashboardOverview } from '../domain/learning';
 import { defaultLanguagePair } from '../domain/languages';
 import { LearnerProfile } from '../domain/learnerProfile';
+import { PhraseCard } from '../domain/phraseCard';
 
 const baseOverview: Omit<DashboardOverview, 'learnerPair'> = {
   modules: [
@@ -54,29 +55,7 @@ const baseOverview: Omit<DashboardOverview, 'learnerPair'> = {
       },
     ],
   },
-  phraseCards: [
-    {
-      id: 'housing-1',
-      category: 'Housing',
-      situation: 'Apartment viewing',
-      sourceText: 'El alquiler incluye agua y electricidad?',
-      targetText: 'Sind Wasser und Strom in der Miete enthalten?',
-    },
-    {
-      id: 'emergency-1',
-      category: 'Emergency',
-      situation: 'Medical help',
-      sourceText: 'Necesito un medico lo antes posible.',
-      targetText: 'Ich brauche so schnell wie moglich einen Arzt.',
-    },
-    {
-      id: 'study-1',
-      category: 'Study',
-      situation: 'University office',
-      sourceText: 'Donde puedo entregar estos documentos?',
-      targetText: 'Wo kann ich diese Unterlagen abgeben?',
-    },
-  ],
+  phraseCards: [],
   lessons: [
     {
       id: 'lesson-arrival',
@@ -114,9 +93,13 @@ const baseOverview: Omit<DashboardOverview, 'learnerPair'> = {
 };
 
 export const learningContentService = {
-  async getDashboardOverview(learnerProfile?: LearnerProfile): Promise<DashboardOverview> {
+  async getDashboardOverview(
+    learnerProfile?: LearnerProfile,
+    phraseCards: PhraseCard[] = [],
+  ): Promise<DashboardOverview> {
     return {
       ...baseOverview,
+      phraseCards,
       learnerPair: {
         sourceLanguage: learnerProfile?.nativeLanguage || defaultLanguagePair.source,
         targetLanguage: learnerProfile?.learningLanguage || defaultLanguagePair.target,

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "mkdir -p dist && cp -r src/* dist/ && find dist -name '*.ts' -delete",
+    "build": "node ./scripts/build-backend.js",
     "deploy": "cd dist && zip -r ../lambda-deployment.zip .",
     "deploy-with-deps": "cd dist && npm install --production && zip -r ../lambda-deployment.zip ."
   },

@@ -116,6 +116,12 @@ body {
   width: 100%;
 }
 
+.phrasebook-page {
+  display: grid;
+  gap: 1.5rem;
+  width: 100%;
+}
+
 .hero-panel,
 .module-card,
 .content-panel,
@@ -164,7 +170,9 @@ body {
 .module-grid,
 .content-grid,
 .stack-list,
-.conversation-list {
+.conversation-list,
+.phrase-card-grid,
+.phrasebook-filters {
   display: grid;
   gap: 1rem;
 }
@@ -237,6 +245,14 @@ body {
 }
 
 .content-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.phrase-card-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.phrasebook-filters {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -370,6 +386,15 @@ button:disabled {
   margin-bottom: 1rem;
 }
 
+.info-message {
+  background-color: #ebf7f4;
+  color: var(--color-accent-strong);
+  padding: 0.75rem;
+  border-radius: 14px;
+  margin-bottom: 1rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
 .like-button {
   background: none;
   border: none;
@@ -424,7 +449,9 @@ button:disabled {
   .hero-panel,
   .module-grid,
   .content-grid,
-  .profile-preferences-grid {
+  .profile-preferences-grid,
+  .phrasebook-filters,
+  .phrase-card-grid {
     grid-template-columns: 1fr;
   }
 }
